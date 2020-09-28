@@ -1,0 +1,47 @@
+version: '2.4'
+
+networks:
+  default:
+    external:
+      name: application_default
+
+services:
+  db:
+    image: mysql:5.7
+    ports:
+      - 3306:3306
+    volumes:
+      - ./docker/.data/db:/var/lib/mysql
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+      MYSQL_DATABASE: my_db
+      MYSQL_USER: my_user
+      MYSQL_PASSWORD: my_password
+
+  php:
+    image: demo_local_php/main:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: demo_php
+    depends_on:
+      - db
+    environment:
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: my_db
+      MYSQL_USER: my_user
+      MYSQL_PASSWORD: my_password
+
+  sa:
+    image: demo_local_sa/main:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: demo_sa
+    depends_on:
+      - php
+    volumes:
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+    ports:
+      - "9080:80"
